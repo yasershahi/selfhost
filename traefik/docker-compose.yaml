@@ -1,0 +1,44 @@
+services:
+  traefik:
+    image: traefik:3.2
+    container_name: traefik
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+       proxy:
+    ports:
+      - 80:80
+      - 443:443
+    environment:
+      - CF_API_EMAIL=youremail@gmail.com
+      - CF_DNS_API_TOKEN=your-cloudflare-api-key
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik.yml:/traefik.yml:ro
+      - ./acme.json:/acme.json
+      - ./logs:/var/log/traefik
+      - ./config:/etc/traefik/config
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.traefik.entrypoints=web"
+      - "traefik.http.routers.traefik.rule=Host(`traefik.yourdomain.com`)"
+      - "traefik.http.middlewares.traefik-auth.basicauth.users=YOUR_USERNAME_PASSWORD"
+      - "traefik.http.middlewares.traefik-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.middlewares.sslheader.headers.customrequestheaders.X-Forwarded-Proto=https"
+      - "traefik.http.routers.traefik.middlewares=traefik-https-redirect"
+      - "traefik.http.routers.traefik-secure.entrypoints=websecure"
+      - "traefik.http.routers.traefik-secure.rule=Host(`traefik.yourdomain.com`)"
+      - "traefik.http.routers.traefik-secure.tls=true"
+      - "traefik.http.routers.traefik-secure.tls.certresolver=cloudflare"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].main=yourdomain.com"
+      - "traefik.http.routers.traefik-secure.tls.domains[0].sans=*.yourdomain.com"
+      # Remove .sans=* line in you do not have a wildcard DNS setup on your Cloudflare
+      # You can add more domains just duplicate tls.domains lines and change the number to [1],[2],...
+      - "traefik.http.routers.traefik-secure.service=api@internal"
+
+networks:
+  proxy:
+    name: proxy
+    external: true
