@@ -1,0 +1,3 @@
+      #- "traefik.http.middlewares.traefik-auth.basicauth.users=YOUR_USERNAME_PASSWORD"
+      #- "traefik.http.routers.traefik-secure.middlewares=traefik-auth"
+      - "traefik.http.routers.traefik-secure.middlewares=middlewares-authentik@file"
